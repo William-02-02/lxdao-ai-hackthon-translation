@@ -1,4 +1,5 @@
-# Translation Task Platform
+# Translation Task Platform 
+--AI生成的！ 将AI贯彻到底
 
 A decentralized translation task platform built with Next.js that enables DAO organizers to publish translation tasks, leverages AI for initial translations, and implements a community-driven review and voting system.
 
@@ -49,42 +50,6 @@ A decentralized translation task platform built with Next.js that enables DAO or
 - Node.js (v14 or higher)
 - npm or yarn
 
-### Installation
-
-1. Clone the repository:
-```bash
-git clone [repository-url]
-```
-
-2. Install dependencies:
-```bash
-npm install
-# or
-yarn install
-```
-
-3. Start the development server:
-```bash
-npm run dev
-# or
-yarn dev
-```
-
-The application will be available at `http://localhost:3000`
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── tasks/          # Task-related components
-│   ├── review/         # Review system components
-│   ├── vote/           # Voting system components
-│   └── common/         # Shared components
-├── types/              # TypeScript type definitions
-├── services/           # Business logic and storage services
-└── utils/             # Utility functions
-```
 
 ## Development Mode Features
 
