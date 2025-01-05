@@ -95,7 +95,7 @@ export default function VoteTask({ taskId }: VoteTaskProps) {
         reviewerId,
         voterId: MOCK_ACCOUNTS.activeUser,
         voteType,
-        comment,
+        comment: comment || undefined,  // 如果评论为空字符串，设为 undefined
         createdAt: new Date().toISOString()
       }
 
@@ -119,7 +119,14 @@ export default function VoteTask({ taskId }: VoteTaskProps) {
           if (p.id === paragraphId) {
             return {
               ...p,
-              status: approves >= totalRequired ? 'approved' : 'rejected' as ParagraphStatus
+              status: approves >= totalRequired ? 'approved' : 'rejected' as ParagraphStatus,
+              voteResult: {
+                approves,
+                rejects,
+                totalVotes: paragraphVotes.length,
+                result: approves >= totalRequired ? 'approved' : 'rejected',
+                completedAt: new Date().toISOString()
+              }
             }
           }
           return p
@@ -134,7 +141,8 @@ export default function VoteTask({ taskId }: VoteTaskProps) {
         const updatedTask: Task = {
           ...task,
           status: allVoted ? 'completed' as TaskStatus : 'voting' as TaskStatus,
-          paragraphs: updatedParagraphs
+          paragraphs: updatedParagraphs,
+          completedAt: allVoted ? new Date().toISOString() : undefined
         }
 
         await updateTaskInStorage(updatedTask)
@@ -175,18 +183,6 @@ export default function VoteTask({ taskId }: VoteTaskProps) {
           <ArrowLeftIcon className="h-4 w-4 mr-1" />
           Back to Vote List
         </Link>
-        <div className="ml-auto flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Current User: {MOCK_ACCOUNTS.activeUser}</span>
-          <select
-            className="text-sm border rounded-md px-2 py-1"
-            value={MOCK_ACCOUNTS.activeUser}
-            onChange={(e) => MOCK_ACCOUNTS.setActiveUser(e.target.value)}
-          >
-            <option value={MOCK_ACCOUNTS.VOTER_1}>Voter 1</option>
-            <option value={MOCK_ACCOUNTS.VOTER_2}>Voter 2</option>
-            <option value={MOCK_ACCOUNTS.VOTER_3}>Voter 3</option>
-          </select>
-        </div>
       </div>
 
       <div className="bg-white shadow sm:rounded-lg">
