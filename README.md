@@ -4,6 +4,11 @@
 A decentralized translation task platform built with Next.js that enables DAO organizers to publish translation tasks, leverages AI for initial translations, and implements a community-driven review and voting system.
 
 ## Features
+![PixPin_2025-01-05_20-14-21](https://github.com/user-attachments/assets/5efd8dca-3bc8-40e4-be76-0570345f1bca)
+![PixPin_2025-01-05_20-14-30](https://github.com/user-attachments/assets/b03fe91c-29cd-4b9c-94d0-6c034da573f2)
+![PixPin_2025-01-05_20-15-07](https://github.com/user-attachments/assets/edb35af5-8452-442c-b1c3-fec7bb43416d)
+![PixPin_2025-01-05_20-15-19](https://github.com/user-attachments/assets/e3b9b446-3f5b-4bf6-b5d3-badee4d24a0f)
+
 
 ### Task Management
 - **Task Creation**: DAO organizers can publish translation tasks with source content
