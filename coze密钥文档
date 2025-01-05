@@ -1,0 +1,270 @@
+配置访问密钥
+通过 Node.js SDK 方式调用扣子 OpenAPI 时，需要在 SDK 请求中配置访问密钥，用于身份信息认证和权限校验。扣子 OpenAPI 提供个人访问密钥和 OAuth 两种鉴权方式。可以选择当前业务场景适合的鉴权方式，并获取对应的访问密钥。​
+对于 OAuth 授权码等授权方式，Node.js SDK 已经封装了这部分代码，并处理了不同的返回错误代码，简化你的操作。​
+配置方式​
+扣子 OpenAPI 目前支持的鉴权方式如下。​
+​
+访问密钥类型​
+鉴权方式​
+说明​
+个人访问密钥（PAT）​
+个人访问密钥（PAT）​
+​
+Personal Access Token，简称 PAT。扣子平台中生成的个人访问令牌。PAT 生成与使用便捷，适用于测试环境调试等场景。每个令牌可以关联多个空间，并开通指定的接口权限。生成方式可参考​添加个人访问令牌。​
+OAuth 认证​
+​
+授权码授权 ​
+( Authorization Code Flow) ​
+适用于有显著前后端之分的应用程序授权场景。其中前端模块负责与用户交互，后端服务处理前端请求，与扣子授权服务器和 OpenAPI 交互。 ​
+PKCE 授权 ​
+( Authorization Code Flow with PKCE) ​
+应用程序无后端服务，所有操作都发生在应用程序的前端。 ​
+设备码授权 ​
+( Device Code Flow) ​
+应用程序无后端服务，所有操作都发生在应用程序的 Command Line，且 Command Line 无法提供“同意授权”的操作。 ​
+JWT 授权 ​
+( JWT Flow) ​
+应用程序服务端直接调用扣子 OpenAPI。 ​
+应用程序后端服务代理应用程序自己的用户获取身份凭据，应用程序用户基于凭据直接访问 OpenAPI。 ​
+​
+配置个人访问密钥（PAT）​
+如果选择使用个人访问密钥鉴权，需要先申请一个个人访问密钥，并添加指定空间和权限。操作步骤可参考​添加个人访问令牌。​
+建议通过环境变量的方式管理访问密钥，避免在代码中通过硬编码方式进行编程，以免密钥泄露、引发安全风险。配置环境变量之后，可以在不修改代码的情况下，将动态的鉴权参数传递到对应的函数，实现便捷安全的身份认证。​
+使用个人访问密钥：​
+设置环境变量。其中 COZE_API_TOKEN 是在扣子平台中申请的个人访问密钥。​
+​
+export COZE_API_TOKEN=pat_****​
+​
+初始化客户端。​
+​
+import { CozeAPI, COZE_CN_BASE_URL } from '@coze/api';​
+​
+// Import token using the environment variable​
+const token = process.env.COZE_API_TOKEN || "input your coze api token"​
+​
+// Create a client instance​
+const client = new CozeAPI({​
+  baseURL: COZE_CN_BASE_URL,​
+  token: token,​
+});​
+​
+出于安全考虑，Node.js SDK 默认不允许在浏览器环境中使用 PAT 认证。如果确实需要在浏览器中使用 PAT（不推荐），可以通过配置强制启用。​
+​
+import { CozeAPI, COZE_CN_BASE_URL } from '@coze/api';​
+​
+// Import token using the environment variable​
+const token = process.env.COZE_API_TOKEN || "input your coze api token"​
+​
+// Access the coze.com service​
+const client = new CozeAPI({​
+  baseURL: COZE_CN_BASE_URL,​
+  token: token,​
+  allowPersonalAccessTokenInBrowser: true, // Allow the browers to use PAT​
+});            ​
+​
+配置 OAuth 授权码流程​
+如果选择使用 OAuth 授权码方式完成授权，可参考以下流程及示例代码。​
+创建 OAuth 应用。​
+具体操作步骤可参考​OAuth 授权码授权。成功创建 OAuth 应用后，可获得客户端 ID、客户端密钥和重定向地址。请妥善保管客户端密钥，以免数据泄露引发安全风险。​
+在代码中通过环境变量方式获取客户端 ID、客户端密钥和重定向地址。​
+​
+import {​
+  CozeAPI,​
+  getWebAuthenticationUrl,​
+  getWebOAuthToken,​
+  refreshOAuthToken,​
+  COZE_CN_BASE_URL​
+} from '@coze/api';​
+​
+const clientId = process.env.COZE_CLIENT_ID;​
+const clientSecret = process.env.COZE_CLIENT_SECRET;​
+const redirectUrl = process.env.COZE_REDIRECT_URL;​
+const baseURL = COZE_CN_BASE_URL;​
+​
+根据授权码流程，调用​获取授权页面 URL等接口实现授权码流程。​
+授权码流程中，会自动生成一个扣子授权页面，然后将其发送给需要授权的用户。扣子用户可访问此链接，并根据页面提示完成授权流程。​
+​
+// Generate the authentication URL using the provided parameters​
+const authUrl = getWebAuthenticationUrl({​
+  clientId,​
+  redirectUrl,​
+  baseURL,​
+  state: '123', // Set a state parameter for user data​
+});​
+​
+用户点击同意授权按钮后，扣子网页会将请求重定向到授权链接中配置的重定向地址，并通过 Query 在地址中携带授权码和状态参数。​
+通过授权码（OAuth code）调用​获取 OAuth Access Token 接口即可获取 OAuth Access Token。示例代码如下：​
+​
+// Get the authorization code from url query​
+const code = await getCodeFromQuery();​
+console.log('Received code:', code);​
+​
+// Exchange the authorization code for an OAuth token​
+const oauthToken = await getWebOAuthToken({​
+  clientId,​
+  clientSecret,​
+  redirectUrl,​
+  baseURL,​
+  code,​
+});​
+​
+// Initialize a new Coze API client using the obtained access token​
+const client = new CozeAPI({​
+  baseURL,​
+  token: oauthToken.access_token,​
+});​
+​
+// Refresh the OAuth token using the refresh token obtained earlier​
+const refreshedOAuthToken = await refreshOAuthToken({​
+  clientId,​
+  refreshToken: oauthToken.refresh_token,​
+  clientSecret,​
+  baseURL,​
+});​
+​
+配置 OAuth PKCE 授权流程​
+如果选择使用 OAuth PKCE 方式完成授权，可参考以下流程及示例代码。​
+创建 OAuth 应用。​
+具体操作步骤可参考​OAuth PKCE 。成功创建 OAuth 应用后，可获得客户端 ID 和重定向地址。​
+在代码中通过环境变量方式设置客户端 ID 和重定向地址。​
+​
+import {​
+  CozeAPI,​
+  getPKCEAuthenticationUrl,​
+  getPKCEOAuthToken,​
+  refreshOAuthToken,​
+  COZE_CN_BASE_URL,​
+} from '@coze/api';​
+​
+const clientId = process.env.COZE_CLIENT_ID;​
+const redirectUrl = process.env.COZE_REDIRECT_URL;​
+const baseURL = COZE_CN_BASE_URL;​
+​
+在代码中实现 OAuth PKCE 授权流程。​
+客户端生成一个随机值 code_verifier，并根据指定算法将其转换为 code_challenge，算法通常使用 SHA-256 算法。然后基于回调地址、code_challenge 和 code_challenge_method，生成一个授权链接。​
+​
+// Generate the PKCE authentication URL and code verifier​
+const { url, codeVerifier } = await getPKCEAuthenticationUrl({​
+  clientId,​
+  redirectUrl,​
+  baseURL,​
+  state: '123', // Set a state parameter for user data​
+});​
+​
+完成授权。​
+引导用户打开这个授权链接。当用户同意授权时，扣子会将页面重定向到开发者配置的回调地址，开发者可以获取这个 code，换取访问密钥。​
+​
+// Get the authorization code from url query​
+const code = await getCodeFromQuery();​
+console.log('Received code:', code);​
+​
+// Exchange the authorization code for an OAuth token using PKCE​
+const oauthToken = await getPKCEOAuthToken({​
+  clientId,​
+  redirectUrl,​
+  baseURL,​
+  code,​
+  codeVerifier,​
+});​
+​
+// Initialize a new Coze API client using the obtained access token​
+const client = new CozeAPI({​
+  baseURL,​
+  token: oauthToken.access_token,​
+});​
+​
+// Example of how to use the client (commented out)​
+// e.g. client.chat.stream(...);​
+​
+// Refresh the OAuth token using the refresh token obtained earlier​
+const refreshedOAuthToken = await refreshOAuthToken({​
+  clientId,​
+  refreshToken: oauthToken.refresh_token,​
+  baseURL,​
+});​
+​
+配置 OAuth 设备码授权流程​
+如果选择使用 OAuth 设备码方式完成授权，可参考以下流程及示例代码。​
+创建 OAuth 应用。​
+具体操作步骤可参考​OAuth 设备授权。成功创建 OAuth 应用后，可获得客户端 ID。​
+在代码中通过环境变量方式设置客户端 ID。​
+​
+import { APIError, CozeAPI, getDeviceCode, getDeviceToken, COZE_CN_BASE_URL } from '@coze/api';​
+​
+const clientId = process.env.COZE_CLIENT_ID;​
+const baseURL = COZE_CN_BASE_URL;​
+​
+通过 OAuth 设备码授权流程获得访问密钥。​
+应用程序需要调用扣子 OpenAPI 生成设备代码，以获取 user_code 和 device_code。通过 user_code 生成授权链接，并引导用户打开该链接、填写 user_code、同意授权。应用程序调用扣子 OpenAPI，通过 device_code 生成访问密钥。​
+如果用户尚未授权或拒绝了授权，接口将抛出异常并返回特定的错误代码。用户同意授权后，接口将成功并返回访问密钥。​
+​
+// Get the device code​
+const deviceCode = await getDeviceCode({​
+  baseURL,​
+  clientId,​
+});​
+// Instruct the user to visit the verification URI and enter the user code​
+console.log(​
+`please open ${deviceCode.verification_uri} and input the code ${deviceCode.user_code}`,​
+);​
+​
+应用程序还需要使用 device_code 来轮询扣子 OpenAPI 以获取访问密钥，接口已经做了封装，设置 poll = true 即可。​
+​
+const deviceToken = await getDeviceToken({​
+  baseURL,​
+  clientId,​
+  deviceCode: deviceCode.device_code,​
+  poll: true,​
+});​
+​
+最后，当 Token 失效时，可以通过 refreshOAuthToken 刷新 Token​
+​
+// Refresh the access token if it expires​
+const refreshToken = deviceToken.refresh_token;​
+const refreshTokenResult = await refreshOAuthToken({​
+  baseURL,​
+  clientId,​
+  refreshToken,​
+});​
+​
+配置 OAuth JWT 授权流程​
+如果选择使用 OAuth JWT 方式完成授权，可参考以下流程及示例代码。​
+创建 OAuth 应用并授权。​
+具体操作步骤可参考​OAuth JWT 授权（开发者）。成功创建 OAuth 应用后，可获得客户端 ID、公钥和私钥。妥善保管公钥和私钥，以免数据泄露引发安全风险。​
+在代码中通过环境变量方式设置客户端 ID、公钥和私钥。​
+​
+import { fileURLToPath } from 'node:url';​
+import { dirname, join } from 'node:path';​
+import fs from 'fs';​
+​
+import jwt from 'jsonwebtoken';​
+import { CozeAPI, getJWTToken, COZE_CN_BASE_URL } from '@coze/api';​
+​
+const baseURL = COZE_CN_BASE_URL;​
+const appId = process.env.COZE_APP_ID;​
+const keyid = process.env.COZE_KEY_ID;​
+const aud = process.env.COZE_AUD;​
+​
+应用程序通过公钥和私钥签署 JWT，并通过扣子提供的 API 获取访问密钥。​
+​
+// Read the private key from a file​
+const __filename = fileURLToPath(import.meta.url);​
+const __dirname = dirname(__filename);​
+const privateKey = fs​
+  .readFileSync(join(__dirname, '../../tmp/private_key.pem'))​
+  .toString();​
+​
+const result = await getJWTToken({​
+  baseURL,​
+  appId,​
+  aud,​
+  keyid,​
+  privateKey,​
+});​
+console.log('getJWTToken', result);​
+​
+// Initialize a new Coze API client using the obtained access token​
+const client = new CozeAPI({ baseURL, token: result.access_token });​
+​
+// Example of how to use the client (commented out)​
+// e.g. client.chat.stream(...);

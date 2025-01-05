@@ -1,0 +1,161 @@
+查看对话消息详情
+查看指定对话中除 Query 以外的其他消息，包括模型回复、智能体执行的中间结果等消息。​
+查看消息列表 API 与查看对话消息详情 API 的区别在于：​
+查看消息列表 API 用于查询指定会话（conversation）中的所有消息，不仅包括开发者在会话中手动插入的每一条消息，也包括用户的每一次 Query、智能体的每一次回复。​
+查看对话消息详情 API 通常用于非流式对话场景中，查看某次对话（chat）中 type=answer 的智能体回复及 type=follow-up 等类型的对话中间态消息。​
+调用此 API 之前，建议先以每秒最多 1 次的频率轮询 ​查看对话详情 API 确认本轮对话已结束（status=completed），否则调用此 API 时获取到的消息内容可能不完整。​
+​
+基础信息​
+​
+请求方式​
+GET​
+请求地址​
+​
+ https://api.coze.cn/v3/chat/message/list​
+​
+权限​
+chat​
+确保调用该接口使用的个人令牌开通了 chat 权限，详细信息参考​鉴权方式。​
+接口说明​
+查看指定对话中除 Query 以外的其他消息，包括模型回复、智能体执行的中间结果等消息。​
+​
+Header​
+​
+参数​
+取值​
+说明​
+Authorization​
+Bearer $Access_Token​
+用于验证客户端身份的访问令牌。你可以在扣子平台中生成访问令牌，详细信息，参考​准备工作。​
+Content-Type​
+application/json​
+解释请求正文的方式。​
+​
+​
+​
+Query​
+​
+参数​
+类型​
+是否必选​
+说明​
+conversation_id​
+String​
+必选​
+Conversation ID，即会话的唯一标识。​
+chat_id​
+String​
+必选​
+Chat ID，即对话的唯一标识。​
+​
+返回结果​
+​
+参数​
+类型​
+说明​
+data​
+Array of Object​
+指定对话中除 Query 以外的其他消息，包括模型回复、智能体执行的中间结果等消息。详细说明可参考 ​Message Object。​
+code​
+Integer​
+状态码。​
+0 代表调用成功。​
+msg​
+String​
+状态信息。API 调用失败时可通过此字段查看详细错误信息。​
+​
+Message Object​
+​
+参数​
+类型​
+说明​
+id​
+String​
+Message ID，即消息的唯一标识。​
+conversation_id​
+String​
+此消息所在的会话 ID。​
+bot_id​
+String​
+编写此消息的智能体ID。此参数仅在对话产生的消息中返回。​
+chat_id​
+String​
+Chat ID。此参数仅在对话产生的消息中返回。​
+meta_data​
+Map​
+创建消息时的附加消息，获取消息时也会返回此附加消息。​
+role​
+String​
+发送这条消息的实体。取值：​
+user：代表该条消息内容是用户发送的。​
+assistant：代表该条消息内容是智能体发送的。​
+content​
+String​
+​
+消息的内容，支持纯文本、多模态（文本、图片、文件混合输入）、卡片等多种类型的内容。​
+content_type​
+String​
+消息内容的类型，取值包括：​
+text：文本。​
+object_string：多模态内容，即文本和文件的组合、文本和图片的组合。​
+card：卡片。此枚举值仅在接口响应中出现，不支持作为入参。​
+created_at​
+Integer​
+消息的创建时间，格式为 10 位的 Unixtime 时间戳，单位为秒（s）。​
+updated_at​
+Integer​
+消息的更新时间，格式为 10 位的 Unixtime 时间戳，单位为秒（s）。​
+type​
+String​
+消息类型。​
+question：用户输入内容。​
+answer：智能体返回给用户的消息内容，支持增量返回。如果工作流绑定了 messge 节点，可能会存在多 answer 场景，此时可以用流式返回的结束标志来判断所有 answer 完成。​
+function_call：智能体对话过程中调用函数（function call）的中间结果。 ​
+tool_output：调用工具 （function call）后返回的结果。​
+tool_response：调用工具 （function call）后返回的结果。​
+follow_up：如果在智能体上配置打开了用户问题建议开关，则会返回推荐问题相关的回复内容。​
+verbose：多 answer 场景下，服务端会返回一个 verbose 包，对应的 content 为 JSON 格式，content.msg_type =generate_answer_finish 代表全部 answer 回复完成。​
+仅发起会话（v3）接口支持将此参数作为入参，且：​
+如果 autoSaveHistory=true，type 支持设置为 question 或 answer。​
+如果 autoSaveHistory=false，type 支持设置为 question、answer、function_call、tool_output/tool_response。​
+其中，type=question 只能和 role=user 对应，即仅用户角色可以且只能发起 question 类型的消息。详细说明可参考​消息 type 说明。​
+​
+​
+​
+​
+示例​
+请求示例​
+​
+curl --location --request GET 'https://api.coze.cn/v3/chat/message/list?chat_id=738216760624714****&conversation_id=738147352534297****' \​
+--header 'Authorization: Bearer pat_OYDacMzM3WyOWV3Dtj2bHRMymzxP****' \​
+--header 'Content-Type: application/json' \​
+​
+返回示例​
+​
+{​
+    "code": 0,​
+    "data": [​
+        {​
+            "bot_id": "737946218936519****",​
+            "content": "{\"msg_type\":\"generate_answer_finish\",\"data\":\"\",\"from_module\":null,\"from_unit\":null}",​
+            "content_type": "text",​
+            "conversation_id": "738147352534297****",​
+            "id": "738216762080970****",​
+            "role": "assistant",​
+            "type": "verbose"​
+        },​
+        {​
+            "bot_id": "7379462189365198898",​
+            "content": "2024 年 10 月 1 日是星期二。您可以通过日历或者相关的日期查询工具来核实确认。 ",​
+            "content_type": "text",​
+            "conversation_id": "738147352534297****",​
+            "id": "738216760624724****",​
+            "role": "assistant",​
+            "type": "answer"​
+        }​
+    ],​
+    "msg": ""​
+}​
+​
+​
+​

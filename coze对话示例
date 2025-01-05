@@ -1,0 +1,35 @@
+发起对话 
+发起对话接口用于向指定智能体发起一次对话。支持在对话时添加对话的上下文消息，以便智能体基于历史消息做出合理的回复。开发者可以按需选择响应方式，即流式或非流式响应。响应方式决定了开发者获取智能体回复的方式。
+流式响应：智能体在生成回复的同时，将回复消息以数据流的形式逐条发送给客户端。处理结束后，服务端会返回一条完整的智能体回复。详细说明可参考流式响应。 
+非流式响应：无论对话是否处理完毕，立即发送响应消息。开发者可以通过接口查看对话详情口确认本次对话处理结束后，再调用查看对话消息详情接口查看模型回复等完整响应内容。详细说明可参考非流式响应。
+本文档以流式响应为例，演示通过 API 方式和智能体对话相关实例代码。可以查看 Node.js SDK 示例代码目录，查看 chat 接口的其他实现方式。例如，非流式响应、对话中发送多模态内容等。
+示例代码如下：
+import { CozeAPI, ChatEventType, ChatStatus, COZE_CN_BASE_URL, RoleType } from '@coze/api';
+
+const token = process.env.COZE_API_TOKEN;
+const botId = process.env.COZE_BOT_ID;
+const baseURL = COZE_CN_BASE_URL;
+
+const client = new CozeAPI({
+  baseURL,
+  token,
+});
+
+
+const stream = await client.chat.stream({
+    bot_id: botId,
+    additional_messages: [
+      {
+        role: RoleType.User,
+        content: '你好',
+        content_type: 'text',
+      },
+    ],
+});
+
+for await (const part of stream) {
+  if (part.event === ChatEventType.CONVERSATION_MESSAGE_DELTA) {
+    process.stdout.write(part.data.content); // Real-time response
+  }
+}
+
